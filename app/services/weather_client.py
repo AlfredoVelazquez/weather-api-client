@@ -6,11 +6,9 @@
 import requests
 
 
-# URL base para buscar ciudades
 GEOCODING_URL = "https://geocoding-api.open-meteo.com/v1/search"
-
-# URL base para consultar el clima
 WEATHER_URL = "https://api.open-meteo.com/v1/forecast"
+REQUEST_TIMEOUT = 10
 
 
 def get_city_coordinates(city_name):
@@ -18,7 +16,6 @@ def get_city_coordinates(city_name):
     Busca una ciudad y obtiene sus coordenadas.
     """
 
-    # Parámetros enviados a la API
     params = {
         "name": city_name,
         "count": 1,
@@ -27,43 +24,38 @@ def get_city_coordinates(city_name):
     }
 
     try:
-
-        # Realizamos petición HTTP GET
         response = requests.get(
             GEOCODING_URL,
             params=params,
-            timeout=10
+            timeout=REQUEST_TIMEOUT
         )
-
-        # Verificamos errores HTTP
         response.raise_for_status()
 
-        # Convertimos JSON a diccionario Python
         data = response.json()
 
-        # Validamos si hubo resultados
-        if "results" not in data:
+        if "results" not in data or len(data["results"]) == 0:
             return None
 
-        # Tomamos la primera ciudad encontrada
         city = data["results"][0]
 
         return {
-            "name": city["name"],
-            "country": city["country"],
-            "latitude": city["latitude"],
-            "longitude": city["longitude"],
+            "name": city.get("name"),
+            "country": city.get("country"),
+            "latitude": city.get("latitude"),
+            "longitude": city.get("longitude"),
         }
 
     except requests.exceptions.RequestException:
-
-        print("Error: no se pudo conectar con la API.")
+        return None
+    except ValueError:
+        return None
+    except KeyError:
         return None
 
 
 def get_current_weather(latitude, longitude):
     """
-    Obtiene el clima actual.
+    Obtiene el clima actual usando latitud y longitud.
     """
 
     params = {
@@ -78,33 +70,37 @@ def get_current_weather(latitude, longitude):
     }
 
     try:
-
         response = requests.get(
             WEATHER_URL,
             params=params,
-            timeout=10
+            timeout=REQUEST_TIMEOUT
         )
-
         response.raise_for_status()
 
         data = response.json()
 
-        # Validamos existencia de datos
         if "current" not in data:
             return None
 
-        return data["current"]
+        current = data["current"]
+
+        return {
+            "temperature_2m": current.get("temperature_2m"),
+            "relative_humidity_2m": current.get("relative_humidity_2m"),
+            "weather_code": current.get("weather_code"),
+        }
 
     except requests.exceptions.RequestException:
-
-        print("Error: no se pudo consultar el clima actual.")
+        return None
+    except ValueError:
+        return None
+    except KeyError:
         return None
 
 
 def get_weather_forecast(latitude, longitude):
     """
-    Consulta el pronóstico básico
-    de los próximos días.
+    Consulta el pronóstico básico de los próximos días.
     """
 
     params = {
@@ -120,24 +116,36 @@ def get_weather_forecast(latitude, longitude):
     }
 
     try:
-
         response = requests.get(
             WEATHER_URL,
             params=params,
-            timeout=10
+            timeout=REQUEST_TIMEOUT
         )
-
         response.raise_for_status()
 
         data = response.json()
 
-        # Validamos que exista la sección daily
         if "daily" not in data:
             return None
 
-        return data["daily"]
+        daily = data["daily"]
+
+        required_keys = [
+            "time",
+            "temperature_2m_max",
+            "temperature_2m_min",
+            "weather_code",
+        ]
+
+        for key in required_keys:
+            if key not in daily:
+                return None
+
+        return daily
 
     except requests.exceptions.RequestException:
-
-        print("Error: no se pudo consultar el pronóstico.")
+        return None
+    except ValueError:
+        return None
+    except KeyError:
         return None
