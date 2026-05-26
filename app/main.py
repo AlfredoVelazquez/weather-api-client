@@ -1,40 +1,40 @@
 # ==========================================
 # Weather API Client
-# Introducción a requests y JSON
+# Archivo principal de ejecución
 # ==========================================
 
-# Importamos la librería requests
-# Esta librería permite hacer peticiones HTTP
-import requests
+from weather_client import get_city_coordinates, get_current_weather
 
 
-# Función principal del programa
 def main():
+    """
+    Función principal del programa.
+    """
 
-    # URL de prueba para aprender requests
-    url = "https://jsonplaceholder.typicode.com/users/1"
+    print("===================================")
+    print(" Weather API Client")
+    print("===================================")
 
-    print("Realizando petición HTTP...")
+    # Ciudad de prueba
+    city_name = "Pachuca"
+
+    # Buscamos coordenadas de la ciudad
+    city = get_city_coordinates(city_name)
+
+    # Validamos si la ciudad fue encontrada
+    if city is None:
+        print("No se encontró la ciudad.")
+        return
+
+    # Consultamos el clima actual usando coordenadas
+    weather = get_current_weather(city["latitude"], city["longitude"])
+
     print()
-
-    # Realizamos una petición GET
-    response = requests.get(url)
-
-    # Mostramos el código de estado HTTP
-    print(f"Código de estado: {response.status_code}")
-    print()
-
-    # Convertimos la respuesta JSON
-    # en un diccionario de Python
-    data = response.json()
-
-    # Mostramos información específica
-    print("Datos recibidos:")
-    print(f"Nombre: {data['name']}")
-    print(f"Usuario: {data['username']}")
-    print(f"Correo: {data['email']}")
+    print(f"Ciudad: {city['name']}, {city['country']}")
+    print(f"Temperatura: {weather['temperature_2m']} °C")
+    print(f"Humedad: {weather['relative_humidity_2m']} %")
+    print(f"Código del clima: {weather['weather_code']}")
 
 
-# Punto de entrada principal
 if __name__ == "__main__":
     main()
