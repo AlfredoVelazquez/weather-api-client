@@ -3,39 +3,36 @@
 # Archivo principal de ejecución
 # ==========================================
 
-from weather_client import get_city_coordinates, get_current_weather
+from services.weather_client import get_city_coordinates, get_current_weather
+from utils.display import show_header, show_weather_result, show_error
+from utils.validators import validate_city_name
 from weather_codes import get_weather_description
 
 
 def main():
     """
     Función principal del programa.
+    Coordina el flujo general de la aplicación.
     """
 
-    print("===================================")
-    print(" Weather API Client")
-    print("===================================")
-    print()
+    # Mostramos el encabezado del programa
+    show_header()
 
-    # Solicitamos al usuario el nombre de una ciudad
-    city_name = input("Ingresa una ciudad: ")
+    # Solicitamos al usuario el nombre de la ciudad
+    city_input = input("Ingresa una ciudad: ")
 
-    # Eliminamos espacios innecesarios
-    city_name = city_name.strip()
+    # Validamos y limpiamos la entrada del usuario
+    city_name = validate_city_name(city_input)
 
-    # Validamos que el usuario haya escrito algo
-    if city_name == "":
-        print()
-        print("Error: debes ingresar una ciudad.")
+    if city_name is None:
+        show_error("debes ingresar una ciudad.")
         return
 
-    # Buscamos información de la ciudad
+    # Buscamos coordenadas de la ciudad
     city = get_city_coordinates(city_name)
 
-    # Validamos si la ciudad existe
     if city is None:
-        print()
-        print("No se encontró información de la ciudad.")
+        show_error("no se encontró información de la ciudad.")
         return
 
     # Consultamos el clima actual
@@ -44,26 +41,18 @@ def main():
         city["longitude"]
     )
 
-    # Validamos si el clima fue obtenido correctamente
     if weather is None:
-        print()
-        print("No se pudo obtener el clima actual.")
+        show_error("no se pudo obtener el clima actual.")
         return
 
-    # Convertimos el código del clima
-    # en una descripción amigable
+    # Convertimos el código del clima en descripción
     description = get_weather_description(
         weather["weather_code"]
     )
 
-    print()
-    print("========= RESULTADO =========")
-    print(f"Ciudad: {city['name']}, {city['country']}")
-    print(f"Temperatura: {weather['temperature_2m']} °C")
-    print(f"Humedad: {weather['relative_humidity_2m']} %")
-    print(f"Clima: {description}")
+    # Mostramos el resultado final
+    show_weather_result(city, weather, description)
 
 
-# Punto de entrada principal
 if __name__ == "__main__":
     main()
